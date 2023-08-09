@@ -1,0 +1,40 @@
+global
+    log /dev/log local0
+    log /dev/log local1 notice
+    chroot /var/lib/haproxy
+    stats timeout 30s
+    user haproxy
+    group haproxy
+    daemon
+    tune.ssl.default-dh-param 2048
+
+defaults
+    log global
+    mode http
+    option httplog
+    option dontlognull
+    option http-server-close
+    option forwardfor
+    timeout connect 5000
+    timeout client 50000
+    timeout server 50000
+
+frontend http_frontend
+    bind *:443 ssl crt /etc/letsencrypt/live/www.josue-tobi.tech/fullchain.pem
+    mode http
+    default_backend http_backend
+
+backend http_backend
+    mode http
+    balance roundrobin
+    server 5743-web-01 54.85.25.198:80 check
+    server 5743-web-02 50.19.132.15:80 check
+
+listen 5743-lb-01
+    bind *:80
+    mode http
+    balance roundrobin
+    option httpclose
+    option forwardfor
+    server 5743-web-02 50.19.132.15:80 check
+    server 5743-web-01 54.85.25.198:80 check
